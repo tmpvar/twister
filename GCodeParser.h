@@ -1,5 +1,5 @@
 /*
-  gcode.h - rs274/ngc parser.
+  GCodeParser.h - rs274/ngc parser.
   Part of Twister
 
   Copyright (c) 2009 Simen Svale Skogsrud
@@ -30,13 +30,40 @@
 #define GCSTATUS_MOTION_CONTROL_ERROR 4
 #define GCSTATUS_FLOATING_POINT_ERROR 5
 
-// Initialize the parser
-void gc_init();
+class GCodeParser {
+private:
+  GCodeParser();
+  static uint32_t line_number;
+  static uint8_t status_code;
+  static uint8_t motion_mode;         /* {G0, G1, G2, G3, G38.2, G80, G81, G82, G83, G84, G85, G86, G87, G88, G89} */
+  static uint8_t inverse_feed_rate_mode; /* G93, G94 */
+  static uint8_t inches_mode;         /* 0 = millimeter mode, 1 = inches mode {G20, G21} */
+  static uint8_t absolute_mode;       /* 0 = relative motion, 1 = absolute motion {G90, G91} */
+  static uint8_t program_flow;
+  static int spindle_direction;
+  static double feed_rate;              /* Millimeters/second */
+  static double position[3];    /* Where the interpreter considers the tool to be at this point in the code */
+  static uint8_t tool;
+  static int16_t spindle_speed;         /* RPM/100 */
+  static uint8_t plane_axis_0, plane_axis_1, plane_axis_2; // The axes of the selected plane
+  static int read_double(char *line, //!< string: line of RS274/NGC code being processed
+                       int *counter,       //!< pointer to a counter for position on the line 
+                       double *double_ptr); //!< pointer to double to be read                  
 
-// Execute one block of rs275/ngc/g-code
-uint8_t gc_execute_line(char *line);
+  static int next_statement(char *letter, double *double_ptr, char *line, int *counter);
+  static void select_plane(uint8_t axis_0, uint8_t axis_1, uint8_t axis_2);
+  static float to_millimeters(double value);
 
-// get the current logical position (in current units), the current status code and the unit mode
-void gc_get_status(double *position_, uint8_t *status_code_, int *inches_mode_, uint32_t *line_number_);
+public:
+  // Initialize the parser
+  static void init();
+
+  // Execute one block of rs275/ngc/g-code
+  static uint8_t execute_line(char *line);
+
+  // get the current logical position (in current units), the current status code and the unit mode
+  static void get_status(double *_position, uint8_t *_status_code, int *_inches_mode, uint32_t *_line_number);
+
+};
 
 #endif

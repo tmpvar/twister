@@ -1,5 +1,5 @@
 /*
-  motion_control.h - cartesian robot controller.
+  nuts_bolts.h - cartesian robot controller.
   Part of Twister
 
   Copyright (c) 2009 Simen Svale Skogsrud

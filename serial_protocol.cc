@@ -18,13 +18,16 @@
   along with Twister.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+extern "C" {
 #include <avr/io.h>
-#include "serial_protocol.h"
-#include "gcode.h"
 #include "wiring_serial.h"
 #include "config.h"
 #include <math.h>
 #include "nuts_bolts.h"
+}
+
+#include "serial_protocol.h"
+#include "GCodeParser.h"
 
 #define BLOCK_BUFFER_SIZE 128
 
@@ -36,22 +39,16 @@ void prompt() {
   line_counter = 0;
 }
 
-void sp_send_execution_marker()
-{
-  // printByte(EXECUTION_MARKER);
-}
-
-
 void print_result() {
   double position[3];
   int inches_mode;
   uint8_t status_code;
   uint32_t line_number;
   int i; // loop variable
-  gc_get_status(position, &status_code, &inches_mode, &line_number);
+  GCodeParser::get_status(position, &status_code, &inches_mode, &line_number);
   printString("\r\n[ ");  
   for(i=X_AXIS; i<=Z_AXIS; i++) {
-    printInteger(trunc(position[i]*100));
+    printInteger((long int) trunc(position[i]*100));
     printByte(' ');
   }
   printByte(']');
@@ -88,7 +85,7 @@ void sp_process()
       // printByte('"');
       // printString(line);
       // printByte('"');
-      gc_execute_line(line);
+      GCodeParser::execute_line(line);
       line_counter = 0;
       //print_result();
       prompt();

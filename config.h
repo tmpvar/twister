@@ -21,7 +21,7 @@
 #ifndef config_h
 #define config_h
 
-#define VERSION "0.0"
+#define VERSION "0.1"
 
 #define INCHES_PER_MM 25.4
 

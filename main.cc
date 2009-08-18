@@ -18,28 +18,30 @@
   along with Twister.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+extern "C" {
 #include <avr/io.h>
 #include <avr/sleep.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
-
-#include "twister.h"
-#include "spindle_control.h"
-#include "motion_control.h"
-#include "gcode.h"
-#include "serial_protocol.h"
-
 #include "config.h"
 #include "wiring_serial.h"
+}
+
+#include "GCodeParser.h"
+#include "serial_protocol.h"
+#include "MotionControl.h"
+#include "spindle_control.h"
+#include "Twister.h"
 
 int main(void)
 {
   beginSerial(BAUD_RATE);
 
-  tt_init(); // initialize theta-lambda stepper driver subsystem
-  mc_init(); // initialize motion control interface
+  MotionControl::init(); // initialize motion control interface
+  Twister::init(); // initialize theta-lambda stepper driver subsystem
+  
   spindle_init(); // initialize spindle controller
-  gc_init(); // initialize gcode-parser
+  GCodeParser::init(); // initialize gcode-parser
   sp_init(); // initialize the serial protocol
   
   sei();

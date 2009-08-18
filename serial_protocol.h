@@ -20,15 +20,9 @@
 #ifndef serial_h
 #define serial_h
 
-// A string to let the client know we are ready for a new command
-#define PROMPT "\r\n>>>"
-// A character to acknowledge that the execution has started
-#define EXECUTION_MARKER '~'
-
 // Initialize the serial protocol
 void sp_init();
-// Called by motion control just before the motion starts
-void sp_send_execution_marker();
+
 // Read command lines from the serial port and execute them as they
 // come in. Blocks until the serial buffer is emptied. 
 void sp_process();

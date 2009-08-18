@@ -24,9 +24,12 @@
 #include <math.h>
 #include <avr/sleep.h>
 #include "config.h"
-#include "wiring_serial.h"
 #include "nuts_bolts.h"
-#include "twister.h"
+#include "Twister.h"
+
+extern "C" {
+#include "wiring_serial.h"
+}
 
 /* A adjusted tangential table for a quadratic step sequence maximizing torque but retaining the correct
    angle of the magnetic field for each position
@@ -89,24 +92,22 @@ struct motion_command {
 
 // motion control state variables
 struct motion_command *current_command; // The motion currently in progress
-double current_travel; // millimeters of travel so far in the current motion
-double current_rate = 0.0; // the current speed
-double target_rate = 0.0;
-double tool_position[3]; // the current position of the tool in xyz-space
-int exit_rate_mode; // True if the dynamic speed control is no longer maintaining base_speed, and have moved on to exit_rate
-double exit_rate_checkpoint = 0.0; /* The point (in mm of the current motion) where acceleration for exit_rate must start, 
+
+double Twister::current_travel; // millimeters of travel so far in the current motion
+double Twister::current_rate = 0.0; // the current speed
+double Twister::target_rate = 0.0;
+double Twister::tool_position[3]; // the current position of the tool in xyz-space
+int Twister::exit_rate_mode; // True if the dynamic speed control is no longer maintaining base_speed, and have moved on to exit_rate
+double Twister::exit_rate_checkpoint = 0.0; /* The point (in mm of the current motion) where acceleration for exit_rate must start, 
                                       given that the current feed rate is maintained. Automatically updated as the speed change. */
 
-struct motion_command motion_buffer[MOTION_BUFFER_SIZE];
+struct motion_command Twister::motion_buffer[MOTION_BUFFER_SIZE];
 
-volatile int motion_buffer_head = 0;
-volatile int motion_buffer_tail = 0;
-
-void set_nanostep_lambda(uint16_t position);
-void set_nanostep_theta(uint16_t position);
+volatile int Twister::motion_buffer_head = 0;
+volatile int Twister::motion_buffer_tail = 0;
 
 /* Initialize the theta-lambda motion coordinator subsystem */
-void tt_init() { 
+void Twister::init() { 
   // Set stepper pwm pins as outputs
   DDRE |= (1<<4)|(1<<5);
   DDRH |= (1<<3)|(1<<4)|(1<<5);
@@ -138,7 +139,7 @@ void tt_init() {
 }       
 
 // Estimate the power of the jerk at the intersection of two motions
-double estimate_jerk_magnitude(struct motion_command *command1, struct motion_command *command2) {
+double Twister::estimate_jerk_magnitude(struct motion_command *command1, struct motion_command *command2) {
   // For our application jerk is half the phytagorean magnitude of the difference between the unit vector of the two motions
   // which gives us a value between 0 and 1.0 where 0 represents no change of direction and 1.0 is a full U-turn
   return(sqrt(
@@ -149,7 +150,7 @@ double estimate_jerk_magnitude(struct motion_command *command1, struct motion_co
 /* Estimates the travel needed to accellerate to the target speed at a given speed using
    the configured constant accelleration CONTROL_ACCELLERATION 
    (units: speed in mm/s, result in mm) */
-double estimate_acceleration_distance(double speed, double target_speed) {
+double Twister::estimate_acceleration_distance(double speed, double target_speed) {
   double min_speed, max_speed;
   if (speed < target_speed) {
     min_speed = speed;
@@ -164,7 +165,7 @@ double estimate_acceleration_distance(double speed, double target_speed) {
 
 /* Buffer a new motion. dx, dy and dz is the relative change in the position during this motion (mm). Feed rate 
    is the speed of the motion in mm/minute. This method also computes lookahead-data for the dynamic speed control. */
-void tt_push_motion(double dx, double dy, double dz, double feed_rate) {
+void Twister::push_motion(double dx, double dy, double dz, double feed_rate) {
   double magnitude = 
     sqrt(square(dx) + 
         square(dy) + 
@@ -202,7 +203,7 @@ void tt_push_motion(double dx, double dy, double dz, double feed_rate) {
 // Called regularly to maintain a certain speed. If the speed is off, CONTROL_ACCELLERATION is used to 
 // increase or decrease the current speed. The speed will never be lowered beneath MIN_SPEED.
 // This method will also update the exit_rate_checkpoint when the speed changes.
-void maintain_speed(double target_speed) {  
+void Twister::maintain_speed(double target_speed) {  
   if (fabs(target_speed-current_rate) <= CONTROL_ACCELLERATION_PER_UPDATE) {
     current_rate = target_speed;
   } else {
@@ -224,9 +225,13 @@ void maintain_speed(double target_speed) {
   }
 }
 
-/* A timer interrupt called UPDATE_FREQUENCY times per second. It pops motion-commands from
-   the buffer and performs them. */ 
-SIGNAL(SIG_OUTPUT_COMPARE5A) {
+/* A timer interrupt called UPDATE_FREQUENCY times per second. Calls Twister::update() */ 
+SIGNAL(SIG_OUTPUT_COMPARE5A) {   
+  Twister::update();
+}
+
+/* The workhorse of the module. It pops motion-commands from the buffer and executes them. */
+void Twister::update() {
   if (current_command) {      
     double t = (1.0*current_travel/current_command->magnitude);
     double x = tool_position[0]+current_command->delta[0]*t;
@@ -234,8 +239,8 @@ SIGNAL(SIG_OUTPUT_COMPARE5A) {
     double distance = sqrt(x*x+y*y);
     double theta = 2*asin(distance/(2*ARM_LENGTH));
     double lambda = theta/2-acos(y/distance)*signof(x);    
-    set_nanostep_theta(round(theta*((100.0/M_PI)*256)));
-    set_nanostep_lambda(round(lambda*((100.0/M_PI)*256)));
+    set_nanostep_theta((uint16_t) round(theta*((100.0/M_PI)*256)));
+    set_nanostep_lambda((uint16_t) round(lambda*((100.0/M_PI)*256)));
     
     if (current_travel >= current_command->magnitude) {
       tool_position[0] = tool_position[0] + current_command->delta[0];
@@ -272,7 +277,7 @@ SIGNAL(SIG_OUTPUT_COMPARE5A) {
 }
 
 // Update PWM for the theta-stepper. A full cycle of microsteps runs from position 0 to 1024
-void set_nanostep_theta(uint16_t position) {
+void Twister::set_nanostep_theta(uint16_t position) {
   uint8_t sector = (position>>7 )%8;
   uint16_t tangent = pgm_read_word_near(&abstan[position&0xff]);
   // OCR0A = xcoil+, OCR0B = xcoil-, OCR2A = ycoil+, OCR2B = ycoil-
@@ -313,7 +318,7 @@ void set_nanostep_theta(uint16_t position) {
 }
 
 // Update PWM for the lambda-stepper. A full cycle of microsteps runs from position 0 to 1024
-void set_nanostep_lambda(uint16_t position) {
+void Twister::set_nanostep_lambda(uint16_t position) {
   uint8_t sector = (position>>7 )%8;
   uint16_t tangent = pgm_read_word_near(&abstan[position&0xff]);
   // OCR0A = xcoil+, OCR0B = xcoil-, OCR2A = ycoil+, OCR2B = ycoil-
@@ -354,6 +359,6 @@ void set_nanostep_lambda(uint16_t position) {
 }
 
 // Block execution until the motion buffer is empty
-void tt_sync() {
+void Twister::synchronize() {
   while (motion_buffer_head != motion_buffer_tail) { sleep_mode(); }
 }
