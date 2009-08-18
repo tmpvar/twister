@@ -1,21 +1,21 @@
 /*
   motion_control.c - cartesian robot controller.
-  Part of Turntable
+  Part of Twister
 
   Copyright (c) 2009 Simen Svale Skogsrud
 
-  Turntable is free software: you can redistribute it and/or modify
+  Twister is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
 
-  Turntable is distributed in the hope that it will be useful,
+  Twister is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with Turntable.  If not, see <http://www.gnu.org/licenses/>.
+  along with Twister.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 /* The structure of this module was inspired by the Arduino GCode_Interpreter by Mike Ellery. The arc
@@ -33,7 +33,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include "nuts_bolts.h"
-#include "turntable.h"
+#include "twister.h"
 #include "wiring_serial.h"
 
 #define ONE_MINUTE_OF_MICROSECONDS 60000000.0      

@@ -1,4 +1,4 @@
-Turntable - An embedded rs274/ngc (g-code) interpreter and RepRap-controller for the AVR series of microcontrollers.
+Twister - An embedded rs274/ngc (g-code) interpreter and RepRap-controller for the AVR series of microcontrollers.
 
 Goals: 
 * Support GCode from common free Skeinforge right out of the box

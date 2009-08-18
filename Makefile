@@ -1,19 +1,19 @@
-#  Part of Turntable
+#  Part of Twister
 #
 #  Copyright (c) 2009 Simen Svale Skogsrud
 #
-#  Turntable is free software: you can redistribute it and/or modify
+#  Twister is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
 #
-#  Turntable is distributed in the hope that it will be useful,
+#  Twister is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Turntable.  If not, see <http://www.gnu.org/licenses/>.
+#  along with Twister.  If not, see <http://www.gnu.org/licenses/>.
 
 
 # This is a prototype Makefile. Modify it according to your needs.
@@ -31,7 +31,7 @@ DEVICE     = atmega1280
 CLOCK      = 16000000
 PROGRAMMER = -c avrisp2 -P usb
 OBJECTS    = main.o motion_control.o gcode.o spindle_control.o wiring_serial.o serial_protocol.o \
-             turntable.o
+             twister.o
 FUSES      = -U hfuse:w:0xd9:m -U lfuse:w:0x24:m
 
 # Tune the lines below only if you know what you are doing:
@@ -40,7 +40,7 @@ AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE) -B 10
 COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -I. 
 
 # symbolic targets:
-all:	turntable.hex
+all:	twister.hex
 
 .c.o:
 	$(COMPILE) -c $< -o $@ 
@@ -56,7 +56,7 @@ all:	turntable.hex
 	$(COMPILE) -S $< -o $@
 
 flash:	all
-	$(AVRDUDE) -U flash:w:turntable.hex:i
+	$(AVRDUDE) -U flash:w:twister.hex:i
 
 fuse:
 	$(AVRDUDE) $(FUSES)
@@ -66,18 +66,18 @@ install: flash fuse
 
 # if you use a bootloader, change the command below appropriately:
 load: all
-	bootloadHID turntable.hex
+	bootloadHID twister.hex
 
 clean:
-	rm -f turntable.hex main.elf $(OBJECTS)
+	rm -f twister.hex main.elf $(OBJECTS)
 
 # file targets:
 main.elf: $(OBJECTS)
 	$(COMPILE) -o main.elf $(OBJECTS) -lm
 
-turntable.hex: main.elf
-	rm -f turntable.hex
-	avr-objcopy -j .text -j .data -O ihex main.elf turntable.hex
+twister.hex: main.elf
+	rm -f twister.hex
+	avr-objcopy -j .text -j .data -O ihex main.elf twister.hex
 	avr-size *.hex *.elf *.o
 # If you have an EEPROM section, you must also create a hex file for the
 # EEPROM and add it to the "flash" target.
