@@ -2,8 +2,7 @@ Turntable - An embedded rs274/ngc (g-code) interpreter and RepRap-controller for
 
 Goals: 
 * Support GCode from common free Skeinforge right out of the box
-* Use novel ultra-ultra-simple mechanical scheme with two rotating joints for horizontal positioning in place of the 
-  traditional cartesian robot.
+* Use novel ultra-ultra-simple mechanical scheme using only hinge joints for horizontal positioning
 * Smooth, silent and accurate motion using 1/256 detent-force-corrected microsteps and 10 bit pwm
 
 Status:
