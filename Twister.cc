@@ -214,7 +214,7 @@ void Twister::maintain_speed(double target_speed) {
       current_rate += CONTROL_ACCELLERATION_PER_UPDATE;
     }
 
-    // Estimeate the new exit_rate_checkpoint unless we are allready in exit_rate_mode
+    // Estimate the new exit_rate_checkpoint unless we are allready in exit_rate_mode
     if (!exit_rate_mode) {
       exit_rate_checkpoint = current_command->magnitude -
         estimate_acceleration_distance(current_rate, current_command->exit_rate);    

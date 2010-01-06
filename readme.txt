@@ -1,7 +1,7 @@
 Twister - An embedded rs274/ngc (g-code) interpreter and RepRap-controller for the AVR series of microcontrollers.
 
 Goals: 
-* Support GCode from common free Skeinforge right out of the box
+* Support GCode from Skeinforge right out of the box
 * Use novel ultra-ultra-simple mechanical scheme using only hinge joints for horizontal positioning
 * Smooth, silent and accurate motion using 1/256 detent-force-corrected microsteps and 10 bit pwm
 
