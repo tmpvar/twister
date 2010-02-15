@@ -27,10 +27,6 @@
 #include "nuts_bolts.h"
 #include "Twister.h"
 
-extern "C" {
-#include "wiring_serial.h"
-}
-
 /* A adjusted tangential table for a quadratic step sequence maximizing torque but retaining the correct
    angle of the magnetic field for each position
    Mathematica notation: Table[tt = t; 1023 - Floor[1023*(Abs[N[Sin[tt]/Cos[tt]]])^(1/1.8)], {t, -Pi/4, Pi/4, Pi/4/128}] */

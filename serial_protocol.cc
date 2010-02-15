@@ -20,12 +20,12 @@
 
 extern "C" {
 #include <avr/io.h>
-#include "wiring_serial.h"
 #include "config.h"
 #include <math.h>
 #include "nuts_bolts.h"
 }
 
+#include "libraries/HardwareSerial.h"
 #include "serial_protocol.h"
 #include "GCodeParser.h"
 
@@ -35,7 +35,7 @@ char line[BLOCK_BUFFER_SIZE];
 uint8_t line_counter;
 
 void prompt() {
-  printString("ok\r\n");
+  Serial.print("ok\r\n");
   line_counter = 0;
 }
 
@@ -46,40 +46,41 @@ void print_result() {
   uint32_t line_number;
   int i; // loop variable
   GCodeParser::get_status(position, &status_code, &inches_mode, &line_number);
-  printString("\r\n[ ");  
+  Serial.print("\r\n[ ");  
   for(i=X_AXIS; i<=Z_AXIS; i++) {
-    printInteger((long int) trunc(position[i]*100));
-    printByte(' ');
+    Serial.print((long int) trunc(position[i]*100));
+    Serial.print(' ');
   }
-  printByte(']');
-  printByte('@');
-  printInteger(line_number);
-  printByte(':');
+  Serial.print(']');
+  Serial.print('@');
+  Serial.print(line_number);
+  Serial.print(':');
   switch(status_code) {
-    case GCSTATUS_OK: printString("0 OK\r\n"); break;
-    case GCSTATUS_BAD_NUMBER_FORMAT: printString("1 Bad number format\r\n"); break;
-    case GCSTATUS_EXPECTED_COMMAND_LETTER: printString("2 Expected command letter\r\n"); break;
-    case GCSTATUS_UNSUPPORTED_STATEMENT: printString("3 Unsupported statement\r\n"); break;
-    case GCSTATUS_MOTION_CONTROL_ERROR: printString("4 Motion control error\r\n"); break;
-    case GCSTATUS_FLOATING_POINT_ERROR: printString("5 Floating point error\r\n"); break;
+    case GCSTATUS_OK: Serial.print("0 OK\r\n"); break;
+    case GCSTATUS_BAD_NUMBER_FORMAT: Serial.print("1 Bad number format\r\n"); break;
+    case GCSTATUS_EXPECTED_COMMAND_LETTER: Serial.print("2 Expected command letter\r\n"); break;
+    case GCSTATUS_UNSUPPORTED_STATEMENT: Serial.print("3 Unsupported statement\r\n"); break;
+    case GCSTATUS_MOTION_CONTROL_ERROR: Serial.print("4 Motion control error\r\n"); break;
+    case GCSTATUS_FLOATING_POINT_ERROR: Serial.print("5 Floating point error\r\n"); break;
   }
 }
 
 void sp_init() 
 {
-  beginSerial(BAUD_RATE);
+  Serial.begin(BAUD_RATE);
   
-  printString("\r\nTwister ");
-  printString(VERSION);
-  printString("\r\n");  
+  Serial.print("\r\nTwister ");
+  Serial.print(VERSION);
+  Serial.print("\r\n");  
   prompt();
 }
 
 void sp_process()
 {
   char c;
-  while((c = serialRead()) != -1) 
+  while(Serial.available()) 
   {
+    c = Serial.read();
     if((c < 32)) {  // Line is complete. Then execute!
       line[line_counter] = 0;
       // printByte('"');

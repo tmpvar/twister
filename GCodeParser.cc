@@ -56,10 +56,14 @@ extern "C" {
 #include "MotionControl.h"
 #include "serial_protocol.h"
 #include "spindle_control.h"
+#include "extruder.h"
+#include "HardwareSerial.h"
 
 #define NEXT_ACTION_DEFAULT 0
 #define NEXT_ACTION_DWELL 1
 #define NEXT_ACTION_GO_HOME 2
+#define NEXT_ACTION_SET_TOOL_TEMP 3
+#define NEXT_ACTION_SET_EXTRUDER_SPEED 4
 
 #define MOTION_MODE_RAPID_LINEAR 0 // G0 
 #define MOTION_MODE_LINEAR 1 // G1
@@ -121,9 +125,10 @@ uint8_t GCodeParser::execute_line(char *line) {
   double unit_converted_value;
   double inverse_feed_rate = -1; // negative inverse_feed_rate means no inverse_feed_rate specified
   int radius_mode = FALSE;
-  
+    
   uint8_t absolute_override = FALSE;       /* 1 = absolute motion for this block only {G53} */
   uint8_t next_action = NEXT_ACTION_DEFAULT;         /* One of the NEXT_ACTION_-constants */
+  uint8_t s_value;
   
   double target[3], offset[3];  
   
@@ -175,6 +180,17 @@ uint8_t GCodeParser::execute_line(char *line) {
         case 3: spindle_direction = 1; break;
         case 4: spindle_direction = -1; break;
         case 5: spindle_direction = 0; break;
+        case 101: toggle_motor1(0,1,1); break; // Extruder on, forward
+        case 102: toggle_motor1(0,0,1); break; // Extruder on, reverse
+        case 103: toggle_motor1(0,0,0); break; // Stop extruder
+        case 104: next_action = NEXT_ACTION_SET_TOOL_TEMP; break;
+        case 105: 
+          Serial.print("T:");
+  				Serial.println(get_tool_temp(0));
+          break;
+        case 106: toggle_fan(0,1); break; // Turn fan on
+        case 107: toggle_fan(0,0); break; // Turn fan off
+        case 108: next_action = NEXT_ACTION_SET_EXTRUDER_SPEED; break;
         default: FAIL(GCSTATUS_UNSUPPORTED_STATEMENT);
       }            
       break;
@@ -205,7 +221,7 @@ uint8_t GCodeParser::execute_line(char *line) {
       case 'I': case 'J': case 'K': offset[letter-'I'] = unit_converted_value; break;
       case 'P': p = value; break;
       case 'R': r = unit_converted_value; radius_mode = TRUE; break;
-      case 'S': spindle_speed = (int16_t) value; break;
+      case 'S': s_value = (uint8_t) value; break;
       case 'X': case 'Y': case 'Z':
       if (absolute_mode || absolute_override) {
         target[letter - 'X'] = unit_converted_value;
@@ -230,6 +246,10 @@ uint8_t GCodeParser::execute_line(char *line) {
   switch (next_action) {
     case NEXT_ACTION_GO_HOME: MotionControl::go_home(); break;
     case NEXT_ACTION_DWELL: MotionControl::dwell((uint32_t) trunc(p*1000)); break;
+    case NEXT_ACTION_SET_TOOL_TEMP:
+      set_tool_temp(0, s_value); break;  
+    case NEXT_ACTION_SET_EXTRUDER_SPEED:
+      set_motor1_pwm(0, s_value); break;          
     case NEXT_ACTION_DEFAULT: 
     switch (motion_mode) {
       case MOTION_MODE_CANCEL: break;

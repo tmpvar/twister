@@ -30,10 +30,7 @@
 #include <util/delay.h>
 #include <math.h>
 #include <stdlib.h>
-
-extern "C" {
-  #include "wiring_serial.h"
-}
+#include "libraries/HardwareSerial.h"
 
 #include "config.h"
 #include "MotionControl.h"
