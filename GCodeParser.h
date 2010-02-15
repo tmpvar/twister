@@ -40,11 +40,9 @@ private:
   static uint8_t inches_mode;         /* 0 = millimeter mode, 1 = inches mode {G20, G21} */
   static uint8_t absolute_mode;       /* 0 = relative motion, 1 = absolute motion {G90, G91} */
   static uint8_t program_flow;
-  static int spindle_direction;
   static double feed_rate;              /* Millimeters/second */
   static double position[3];    /* Where the interpreter considers the tool to be at this point in the code */
   static uint8_t tool;
-  static int16_t spindle_speed;         /* RPM/100 */
   static uint8_t plane_axis_0, plane_axis_1, plane_axis_2; // The axes of the selected plane
   static int read_double(char *line, //!< string: line of RS274/NGC code being processed
                        int *counter,       //!< pointer to a counter for position on the line 

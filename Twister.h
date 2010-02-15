@@ -53,5 +53,6 @@ public:
 
   // Handles execution of motions. Called by a timer UPDATE_RATE times per second.
   static void update();
+  static void move_z(double travel);
 };
 

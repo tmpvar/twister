@@ -30,7 +30,7 @@
 DEVICE     = atmega1280 
 CLOCK      = 16000000
 PROGRAMMER = -c avrisp2 -P usb
-OBJECTS    = main.o MotionControl.o GCodeParser.o spindle_control.o serial_protocol.o \
+OBJECTS    = main.o MotionControl.o GCodeParser.o serial_protocol.o \
              libraries/HardwareSerial.o libraries/Print.o libraries/SimplePacket.o \
              libraries/extruder.o Twister.o
 FUSES      = -U hfuse:w:0xd9:m -U lfuse:w:0x24:m

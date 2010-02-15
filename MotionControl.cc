@@ -63,6 +63,10 @@ void MotionControl::line(double x, double y, double z, float feed_rate, int inve
   delta[1] = y-position[1];
   delta[2] = z-position[2];
 
+  if (delta[2] != 0.0) {
+    Twister::move_z(delta[2]);
+  }
+  
   Twister::push_motion(delta[0],delta[1],delta[2],feed_rate);
   position[0] = x; position[1] = y; position[2] = z;  
 }

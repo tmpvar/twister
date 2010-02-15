@@ -23,18 +23,12 @@
 
 #define VERSION "0.1b"
 
-#define INCHES_PER_MM 25.4
+#define MM_PER_INCH (1.0/25.4)
 
 #define RAPID_FEEDRATE 600.0 // in millimeters per minute
 #define DEFAULT_FEEDRATE 600.0
 
-#define SPINDLE_ENABLE_DDR DDRC
-#define SPINDLE_ENABLE_PORT PORTC
-#define SPINDLE_ENABLE_BIT 3
-
-#define SPINDLE_DIRECTION_DDR DDRC
-#define SPINDLE_DIRECTION_PORT PORTC
-#define SPINDLE_DIRECTION_BIT 4
+#define MM_PER_Z_STEP (0.5/1600)
 
 #define BAUD_RATE 9600
 

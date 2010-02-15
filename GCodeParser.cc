@@ -55,7 +55,6 @@ extern "C" {
 
 #include "MotionControl.h"
 #include "serial_protocol.h"
-#include "spindle_control.h"
 #include "extruder.h"
 #include "HardwareSerial.h"
 
@@ -79,9 +78,6 @@ extern "C" {
 #define PROGRAM_FLOW_PAUSED 1
 #define PROGRAM_FLOW_COMPLETED 2
 
-#define SPINDLE_DIRECTION_CW 0
-#define SPINDLE_DIRECTION_CCW 1
-
 uint32_t GCodeParser::line_number;
 uint8_t GCodeParser::status_code;
 uint8_t GCodeParser::motion_mode;         /* {G0, G1, G2, G3, G38.2, G80, G81, G82, G83, G84, G85, G86, G87, G88, G89} */
@@ -89,11 +85,9 @@ uint8_t GCodeParser::inverse_feed_rate_mode; /* G93, G94 */
 uint8_t GCodeParser::inches_mode;         /* 0 = millimeter mode, 1 = inches mode {G20, G21} */
 uint8_t GCodeParser::absolute_mode;       /* 0 = relative motion, 1 = absolute motion {G90, G91} */
 uint8_t GCodeParser::program_flow;
-int GCodeParser::spindle_direction;
 double GCodeParser::feed_rate;              /* Millimeters/second */
 double GCodeParser::position[3];    /* Where the interpreter considers the tool to be at this point in the code */
 uint8_t GCodeParser::tool;
-int16_t GCodeParser::spindle_speed;         /* RPM/100 */
 uint8_t GCodeParser::plane_axis_0, GCodeParser::plane_axis_1, GCodeParser::plane_axis_2; // The axes of the selected plane
   
 #define FAIL(status) status_code = status;
@@ -112,7 +106,7 @@ void GCodeParser::init() {
 }
 
 float GCodeParser::to_millimeters(double value) {
-  return(inches_mode ? value * INCHES_PER_MM : value);
+  return(inches_mode ? value * MM_PER_INCH : value);
 }
 
 
@@ -128,7 +122,7 @@ uint8_t GCodeParser::execute_line(char *line) {
     
   uint8_t absolute_override = FALSE;       /* 1 = absolute motion for this block only {G53} */
   uint8_t next_action = NEXT_ACTION_DEFAULT;         /* One of the NEXT_ACTION_-constants */
-  uint8_t s_value;
+  uint8_t s_value = 0;
   
   double target[3], offset[3];  
   
@@ -177,9 +171,6 @@ uint8_t GCodeParser::execute_line(char *line) {
       switch(int_value) {
         case 0: case 1: program_flow = PROGRAM_FLOW_PAUSED; break;
         case 2: case 30: case 60: program_flow = PROGRAM_FLOW_COMPLETED; break;
-        case 3: spindle_direction = 1; break;
-        case 4: spindle_direction = -1; break;
-        case 5: spindle_direction = 0; break;
         case 101: toggle_motor1(0,1,1); break; // Extruder on, forward
         case 102: toggle_motor1(0,0,1); break; // Extruder on, reverse
         case 103: toggle_motor1(0,0,0); break; // Stop extruder
@@ -235,13 +226,6 @@ uint8_t GCodeParser::execute_line(char *line) {
   // If there were any errors parsing this line, we will return right away with the bad news
   if (status_code) { return(status_code); }
     
-  // Update spindle state
-  if (spindle_direction) {
-    spindle_run(spindle_direction, spindle_speed);
-  } else {
-    spindle_stop();
-  }
-  
   // Perform any physical actions
   switch (next_action) {
     case NEXT_ACTION_GO_HOME: MotionControl::go_home(); break;
@@ -275,7 +259,7 @@ void GCodeParser::get_status(double *_position, uint8_t *_status_code, int *_inc
   int axis;
   if (inches_mode) {
     for(axis = X_AXIS; axis <= Z_AXIS; axis++) {
-      _position[axis] = position[axis]*INCHES_PER_MM;
+      _position[axis] = position[axis]*MM_PER_INCH;
     }
   } else {
     memcpy(_position, position, sizeof(position));    

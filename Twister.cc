@@ -23,9 +23,12 @@
 #include <avr/interrupt.h>
 #include <math.h>
 #include <avr/sleep.h>
+#include <avr/delay.h>
 #include "config.h"
 #include "nuts_bolts.h"
 #include "Twister.h"
+
+#include "HardwareSerial.h"
 
 /* A adjusted tangential table for a quadratic step sequence maximizing torque but retaining the correct
    angle of the magnetic field for each position
@@ -108,6 +111,9 @@ void Twister::init() {
   DDRE |= (1<<4)|(1<<5);
   DDRH |= (1<<3)|(1<<4)|(1<<5);
   DDRB |= (1<<5)|(1<<6)|(1<<7);
+  
+  // Z-axis pins
+  DDRA |= ((1<<0) | (1<<1));
   
   // Set up 16 bit pwm timers
   
@@ -221,9 +227,33 @@ void Twister::maintain_speed(double target_speed) {
   }
 }
 
-/* A timer interrupt called UPDATE_FREQUENCY times per second. Calls Twister::update() */ 
+/* A timer interrupt called UPDATE_FREQUENCY times per second. */ 
 SIGNAL(SIG_OUTPUT_COMPARE5A) {   
   Twister::update();
+}
+
+void Twister::move_z(double travel) {
+  synchronize();
+  
+  uint32_t steps = (uint32_t) trunc(fabs(travel)/MM_PER_Z_STEP);
+  Serial.println(steps);
+  uint32_t counter;
+
+  // Set direction pin
+  if(travel < 0) {
+    PORTA &= ~2;
+    tool_position[2] -= (MM_PER_Z_STEP*steps);
+  } else {
+    PORTA |= 2;
+    tool_position[2] += (MM_PER_Z_STEP*steps);
+  }
+  
+  for(counter = 0; counter < steps; counter++) {
+    PORTA |= 1;
+    _delay_us(200);
+    PORTA &= ~1;
+    _delay_us(200);
+  }
 }
 
 /* The workhorse of the module. It pops motion-commands from the buffer and executes them. */
@@ -265,7 +295,7 @@ void Twister::update() {
   if (!current_command && (motion_buffer_head != motion_buffer_tail)) {
     // Pop and advance the buffer tail
     current_command = &motion_buffer[motion_buffer_tail];
-    motion_buffer_tail = (motion_buffer_tail + 1) % MOTION_BUFFER_SIZE;		
+    motion_buffer_tail = (motion_buffer_tail + 1) % MOTION_BUFFER_SIZE;
     // Set new target rate and recompute exit_rate_checkpoint
     target_rate = current_command->base_rate;
     exit_rate_checkpoint = current_command->magnitude-estimate_acceleration_distance(current_rate, current_command->exit_rate);    
