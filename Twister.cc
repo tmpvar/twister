@@ -193,7 +193,7 @@ void Twister::push_motion(double dx, double dy, double dz, double feed_rate) {
   // Post lookahead-data for the intersection between the previous motion and this motion
   // Fetch the current last buffered command in order to post lookahead data for the dynamic speed control
   int last_command_position = motion_buffer_head-1;
-  if (last_command_position < 0) { last_command_position = MOTION_BUFFER_SIZE; }
+  if (last_command_position < 0) { last_command_position = MOTION_BUFFER_SIZE-1; }
   struct motion_command *last_command = &motion_buffer[last_command_position];
   double intersection_jerk = estimate_jerk_magnitude(last_command, next_command);
   last_command->exit_rate =  ((next_command->base_rate+last_command->base_rate)/2)*(pow(1.0-intersection_jerk,3));

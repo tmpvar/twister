@@ -171,16 +171,17 @@ uint8_t GCodeParser::execute_line(char *line) {
       switch(int_value) {
         case 0: case 1: program_flow = PROGRAM_FLOW_PAUSED; break;
         case 2: case 30: case 60: program_flow = PROGRAM_FLOW_COMPLETED; break;
-        case 101: toggle_motor1(0,1,1); break; // Extruder on, forward
-        case 102: toggle_motor1(0,0,1); break; // Extruder on, reverse
-        case 103: toggle_motor1(0,0,0); break; // Stop extruder
+        case 101: MotionControl::synchronize(); toggle_motor1(0,1,1); break; // Extruder on, forward
+        case 102: MotionControl::synchronize(); toggle_motor1(0,0,1); break; // Extruder on, reverse
+        case 103: MotionControl::synchronize(); toggle_motor1(0,0,0); break; // Stop extruder
         case 104: next_action = NEXT_ACTION_SET_TOOL_TEMP; break;
         case 105: 
+          MotionControl::synchronize();
           Serial.print("T:");
   				Serial.println(get_tool_temp(0));
           break;
-        case 106: toggle_fan(0,1); break; // Turn fan on
-        case 107: toggle_fan(0,0); break; // Turn fan off
+        case 106: MotionControl::synchronize(); toggle_fan(0,1); break; // Turn fan on
+        case 107: MotionControl::synchronize(); toggle_fan(0,0); break; // Turn fan off
         case 108: next_action = NEXT_ACTION_SET_EXTRUDER_SPEED; break;
         default: FAIL(GCSTATUS_UNSUPPORTED_STATEMENT);
       }            
@@ -231,9 +232,9 @@ uint8_t GCodeParser::execute_line(char *line) {
     case NEXT_ACTION_GO_HOME: MotionControl::go_home(); break;
     case NEXT_ACTION_DWELL: MotionControl::dwell((uint32_t) trunc(p*1000)); break;
     case NEXT_ACTION_SET_TOOL_TEMP:
-      set_tool_temp(0, s_value); break;  
+      MotionControl::synchronize(); set_tool_temp(0, s_value); break;  
     case NEXT_ACTION_SET_EXTRUDER_SPEED:
-      set_motor1_pwm(0, s_value); break;          
+      MotionControl::synchronize(); set_motor1_pwm(0, s_value); break;          
     case NEXT_ACTION_DEFAULT: 
     switch (motion_mode) {
       case MOTION_MODE_CANCEL: break;

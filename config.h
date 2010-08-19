@@ -28,7 +28,7 @@
 #define RAPID_FEEDRATE 600.0 // in millimeters per minute
 #define DEFAULT_FEEDRATE 600.0
 
-#define MM_PER_Z_STEP (0.5/1600)
+#define MM_PER_Z_STEP (2.0/800)
 
 #define BAUD_RATE 9600
 
