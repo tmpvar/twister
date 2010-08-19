@@ -23,7 +23,7 @@
 #include <avr/interrupt.h>
 #include <math.h>
 #include <avr/sleep.h>
-#include <avr/delay.h>
+#include <util/delay.h>
 #include "config.h"
 #include "nuts_bolts.h"
 #include "Twister.h"
@@ -33,8 +33,7 @@
 /* A adjusted tangential table for a quadratic step sequence maximizing torque but retaining the correct
    angle of the magnetic field for each position
    Mathematica notation: Table[tt = t; 1023 - Floor[1023*(Abs[N[Sin[tt]/Cos[tt]]])^(1/1.8)], {t, -Pi/4, Pi/4, Pi/4/128}] */
-const uint16_t __ATTR_PROGMEM__ abstan[] = 
-{0, 7, 14, 21, 28, 35, 42, 48, 55, 62, 68, 75, 81, 88, 94, 100, 107, \
+const uint16_t __ATTR_PROGMEM__ abstan[] = {0, 7, 14, 21, 28, 35, 42, 48, 55, 62, 68, 75, 81, 88, 94, 100, 107, \
 113, 120, 126, 132, 138, 145, 151, 157, 163, 169, 175, 182, 188, 194, \
 200, 206, 212, 218, 224, 230, 236, 242, 248, 254, 260, 266, 272, 277, \
 283, 289, 295, 301, 307, 313, 319, 325, 331, 337, 343, 349, 355, 361, \
@@ -99,6 +98,8 @@ double Twister::tool_position[3]; // the current position of the tool in xyz-spa
 int Twister::exit_rate_mode; // True if the dynamic speed control is no longer maintaining base_speed, and have moved on to exit_rate
 double Twister::exit_rate_checkpoint = 0.0; /* The point (in mm of the current motion) where acceleration for exit_rate must start, 
                                       given that the current feed rate is maintained. Automatically updated as the speed change. */
+uint8_t Twister::z_stepper_state = 0;
+
 
 struct motion_command Twister::motion_buffer[MOTION_BUFFER_SIZE];
 
@@ -236,8 +237,21 @@ void Twister::move_z(double travel) {
   synchronize();
   
   uint32_t steps = (uint32_t) trunc(fabs(travel)/MM_PER_Z_STEP);
-  Serial.println(steps);
   uint32_t counter;
+
+#ifdef USE_RAW_Z_AXIS_H_BRIDGE
+  uint8_t direction = signof(travel);                                
+  // Output patterns for raw h-bridge stepping shifted left to use pin 3-6 for stepping
+  uint8_t stepper_state_mask[4] = {0x05<<2, 0x06<<2, 0x0a<<2, 0x09<<2};
+  
+  DDRA |= 0x3c; // binary 111100
+    
+  for(counter = 0; counter < steps; counter++) {
+    z_stepper_state = (z_stepper_state + direction) & 0x3;
+    PORTA = ((PORTA & (0xff^(0x0f<<2))) | stepper_state_mask[z_stepper_state]);
+    _delay_us(200);
+  }
+#else
 
   // Set direction pin
   if(travel < 0) {
@@ -254,6 +268,7 @@ void Twister::move_z(double travel) {
     PORTA &= ~1;
     _delay_us(200);
   }
+#endif
 }
 
 /* The workhorse of the module. It pops motion-commands from the buffer and executes them. */

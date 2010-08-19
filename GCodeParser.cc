@@ -277,7 +277,7 @@ int GCodeParser::next_statement(char *letter, double *double_ptr, char *line, in
   if (line[*counter] == 0) {
     return(0); // No more statements
   }
-  
+
   *letter = line[*counter];
   if((*letter < 'A') || (*letter > 'Z')) {
     FAIL(GCSTATUS_EXPECTED_COMMAND_LETTER);

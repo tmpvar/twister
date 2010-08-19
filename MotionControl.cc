@@ -64,7 +64,6 @@ void MotionControl::line(double x, double y, double z, float feed_rate, int inve
   delta[2] = z-position[2];
 
   if (delta[2] != 0.0) {
-    Twister::synchronize();
     Twister::move_z(delta[2]);
   }
   

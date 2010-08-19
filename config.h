@@ -52,4 +52,6 @@
    (each entry in the buffer consumes 28 bytes of RAM) */
 #define MOTION_BUFFER_SIZE 50
 
+#define USE_RAW_Z_AXIS_H_BRIDGE
+
 #endif

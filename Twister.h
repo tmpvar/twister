@@ -31,8 +31,9 @@ private:
   static double exit_rate_checkpoint; /* The point (in mm of the current motion) where acceleration for exit_rate must start, 
     given that the current feed rate is maintained. Automatically updated as the speed changes. */
   static struct motion_command motion_buffer[MOTION_BUFFER_SIZE];
+  static uint8_t z_stepper_state;
   volatile static int motion_buffer_head;
-  volatile static int motion_buffer_tail;
+  volatile static int motion_buffer_tail;  
 
   static void set_nanostep_lambda(uint16_t position);
   static void set_nanostep_theta(uint16_t position);
