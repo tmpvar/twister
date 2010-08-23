@@ -29,9 +29,9 @@ extern "C" {
 #include "serial_protocol.h"
 #include "GCodeParser.h"
 
-#define BLOCK_BUFFER_SIZE 128
+#define LINE_BUFFER_SIZE 128
 
-char line[BLOCK_BUFFER_SIZE];
+char line[LINE_BUFFER_SIZE];
 uint8_t line_counter;
 
 void prompt() {
@@ -81,14 +81,14 @@ void sp_process()
   while(Serial.available()) 
   {
     c = Serial.read();
-    if((c < 32)) {  // Line is complete. Then execute!
+    if((char_counter > 0) && ((c == '\n') || (c == '\r'))) {  // Line is complete. Then execute!
       line[line_counter] = 0;
-      // printByte('"');
-      // printString(line);
-      // printByte('"');
+      printByte('"');
+      printString(line);
+      printByte('"');              
+      Serial.print("\r\n");
       GCodeParser::execute_line(line);
       line_counter = 0;
-      //print_result();
       prompt();
     } else if (c == ' ' || c == '\t') { // Throw away whitepace
     } else if (c >= 'a' && c <= 'z') { // Upcase lowercase

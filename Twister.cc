@@ -239,20 +239,24 @@ void Twister::move_z(double travel) {
   uint32_t steps = (uint32_t) trunc(fabs(travel)/MM_PER_Z_STEP);
   uint32_t counter;
 
-#ifdef USE_RAW_Z_AXIS_H_BRIDGE
+#ifdef USE_RAW_Z_AXIS_H_BRIDGE         
+  // Driving the z-axis with a raw h-bridge connected to port A pins 3-6
+  
   uint8_t direction = signof(travel);                                
   // Output patterns for raw h-bridge stepping shifted left to use pin 3-6 for stepping
   uint8_t stepper_state_mask[4] = {0x05<<2, 0x06<<2, 0x0a<<2, 0x09<<2};
   
-  DDRA |= 0x3c; // binary 111100
+  DDRA |= 0x3c; // binary 111100, sets pin 3-6 of port b as outputs
     
   for(counter = 0; counter < steps; counter++) {
     z_stepper_state = (z_stepper_state + direction) & 0x3;
     PORTA = ((PORTA & (0xff^(0x0f<<2))) | stepper_state_mask[z_stepper_state]);
-    _delay_us(200);
+    _delay_ms(3);
   }
 #else
-
+  // Driving the z-axis with a proper stepper driver on port A pins 0-1
+  // (pin 0: step pin, pin 1 direction pin)
+  
   // Set direction pin
   if(travel < 0) {
     PORTA &= ~2;
@@ -269,6 +273,7 @@ void Twister::move_z(double travel) {
     _delay_us(200);
   }
 #endif
+  synchronize();
 }
 
 /* The workhorse of the module. It pops motion-commands from the buffer and executes them. */

@@ -29,7 +29,7 @@
 
 DEVICE     = atmega1280 
 CLOCK      = 16000000
-PROGRAMMER = -c avrisp2 -P /dev/tty.usbmodem621
+PROGRAMMER = -c avrisp2 -P /dev/tty.usbmodem411
 OBJECTS    = main.o MotionControl.o GCodeParser.o serial_protocol.o \
              libraries/HardwareSerial.o libraries/Print.o libraries/SimplePacket.o \
              libraries/extruder.o Twister.o

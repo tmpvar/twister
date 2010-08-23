@@ -24,6 +24,8 @@ if ARGV.empty?
   exit
 end
 
+ 
+#SerialPort.open('/dev/tty.usbserial-A9007QcR', 9600) do |sp|
 SerialPort.open('/dev/tty.usbserial-A6008hf0', 9600) do |sp|
   sp.write("\r\n\r\n");
   sleep 1
@@ -44,4 +46,6 @@ SerialPort.open('/dev/tty.usbserial-A6008hf0', 9600) do |sp|
       end
     end
   end
+  puts "Done."
+  sleep 500
 end

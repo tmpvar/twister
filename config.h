@@ -28,7 +28,7 @@
 #define RAPID_FEEDRATE 600.0 // in millimeters per minute
 #define DEFAULT_FEEDRATE 600.0
 
-#define MM_PER_Z_STEP (2.0/800)
+#define MM_PER_Z_STEP (1.5/200)
 
 #define BAUD_RATE 9600
 
@@ -51,7 +51,11 @@
 /* The maximum number of motions that can be buffered. Must be <= 127 
    (each entry in the buffer consumes 28 bytes of RAM) */
 #define MOTION_BUFFER_SIZE 50
-
+                  
+/* Define this to compile Twister with support for driving the z-axis without a stepper controller. An H-bridge
+must be connected to port A pins 3-6 so that each pair of adjacent pins control one coil of the stepper. By 
+commenting out this line Twister is compiled with support for a stepper controller on the z-axis using port a pin 1 
+for direction and pin 0 for step pulses. See Twister::move_z for more information. */
 #define USE_RAW_Z_AXIS_H_BRIDGE
 
 #endif
