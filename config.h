@@ -36,13 +36,16 @@
 #define ARM_LENGTH (42.0)
 
 // Set the update frequency of the stepper updater. Must be > F_CPU/65535 (== 244 @ 16Mhz)
-#define UPDATE_FREQUENCY 300    
+#define UPDATE_FREQUENCY 300
 
 /* The dynamic speed control always uses this accelleration when changing speeds. The accelleration
    applied is always the same - only the time taken to reach a new speed is adjusted. For max accuracy this 
    should be as high as possible without creating jerky movement.
    The unit is mm/s^2 (millimeters per second per second) */
 #define CONTROL_ACCELLERATION 0.2  
+
+/* 0 == no jerk reduction, 3 == Very soft corners */
+#define JERK_REDUCTION 0.5
 
 /* The minimum speed: to make sure we always reach the end of motions even if we normally would have come to a 
    full stop a micrometer or so before the actual target point. */

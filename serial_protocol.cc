@@ -32,11 +32,11 @@ extern "C" {
 #define LINE_BUFFER_SIZE 128
 
 char line[LINE_BUFFER_SIZE];
-uint8_t line_counter;
+uint8_t char_counter;
 
 void prompt() {
   Serial.print("ok\r\n");
-  line_counter = 0;
+  char_counter = 0;
 }
 
 void print_result() {
@@ -82,19 +82,19 @@ void sp_process()
   {
     c = Serial.read();
     if((char_counter > 0) && ((c == '\n') || (c == '\r'))) {  // Line is complete. Then execute!
-      line[line_counter] = 0;
-      printByte('"');
-      printString(line);
-      printByte('"');              
+      line[char_counter] = 0;
+      Serial.print('"');
+      Serial.print(line);
+      Serial.print('"');              
       Serial.print("\r\n");
       GCodeParser::execute_line(line);
-      line_counter = 0;
+      char_counter = 0;
       prompt();
-    } else if (c == ' ' || c == '\t') { // Throw away whitepace
+    } else if (c <= ' ') { // Throw away whitepace and control characters
     } else if (c >= 'a' && c <= 'z') { // Upcase lowercase
-      line[line_counter++] = c-'a'+'A';
+      line[char_counter++] = c-'a'+'A';
     } else {
-      line[line_counter++] = c;
+      line[char_counter++] = c;
     }
   }
 }

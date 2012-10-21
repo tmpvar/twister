@@ -36,6 +36,7 @@ SerialPort.open('/dev/tty.usbserial-A6008hf0', 9600) do |sp|
       next if line.strip == ''
       puts line.strip
       sp.write("#{line.strip}\r\n");
+      sleep 0.1
       if prebuffer == 0
         begin
           result = sp.gets.strip

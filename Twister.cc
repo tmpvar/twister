@@ -197,7 +197,7 @@ void Twister::push_motion(double dx, double dy, double dz, double feed_rate) {
   if (last_command_position < 0) { last_command_position = MOTION_BUFFER_SIZE-1; }
   struct motion_command *last_command = &motion_buffer[last_command_position];
   double intersection_jerk = estimate_jerk_magnitude(last_command, next_command);
-  last_command->exit_rate =  ((next_command->base_rate+last_command->base_rate)/2)*(pow(1.0-intersection_jerk,3));
+  last_command->exit_rate =  ((next_command->base_rate+last_command->base_rate)/2)*(pow(1.0-intersection_jerk,JERK_REDUCTION));
 
   // Advance the buffer-head
   motion_buffer_head = next_buffer_head;      
