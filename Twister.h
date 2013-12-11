@@ -35,7 +35,8 @@ private:
   volatile static int motion_buffer_head;
   volatile static int motion_buffer_tail;  
 
-  static void set_nanostep_lambda(uint16_t position);
+  //static void set_nanostep_lambda(uint16_t position);
+  static void set_nanostep_lambda(float angle);
   static void set_nanostep_theta(uint16_t position);
   static void maintain_speed(double target_speed);
   static double estimate_jerk_magnitude(struct motion_command *command1, struct motion_command *command2);
