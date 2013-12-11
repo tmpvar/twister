@@ -30,30 +30,6 @@
 
 #include "HardwareSerial.h"
 
-/* A adjusted tangential table for a quadratic step sequence maximizing torque but retaining the correct
-   angle of the magnetic field for each position
-   Mathematica notation: Table[tt = t; 1023 - Floor[1023*(Abs[N[Sin[tt]/Cos[tt]]])^(1/1.8)], {t, -Pi/4, Pi/4, Pi/4/128}] */
-const uint16_t __ATTR_PROGMEM__ abstan[] = {0, 7, 14, 21, 28, 35, 42, 48, 55, 62, 68, 75, 81, 88, 94, 100, 107, \
-113, 120, 126, 132, 138, 145, 151, 157, 163, 169, 175, 182, 188, 194, \
-200, 206, 212, 218, 224, 230, 236, 242, 248, 254, 260, 266, 272, 277, \
-283, 289, 295, 301, 307, 313, 319, 325, 331, 337, 343, 349, 355, 361, \
-367, 373, 378, 385, 391, 397, 403, 409, 415, 421, 427, 433, 439, 446, \
-452, 458, 464, 471, 477, 483, 490, 496, 503, 509, 516, 522, 529, 536, \
-543, 549, 556, 563, 570, 577, 584, 592, 599, 606, 614, 621, 629, 637, \
-645, 653, 661, 669, 678, 686, 695, 704, 713, 722, 732, 741, 751, 762, \
-772, 783, 794, 806, 819, 832, 845, 860, 876, 893, 912, 935, 963, \
-1023, 963, 935, 912, 893, 876, 860, 845, 832, 819, 806, 794, 783, \
-772, 762, 751, 741, 732, 722, 713, 704, 695, 686, 678, 669, 661, 653, \
-645, 637, 629, 621, 614, 606, 599, 592, 584, 577, 570, 563, 556, 549, \
-543, 536, 529, 522, 516, 509, 503, 496, 490, 483, 477, 471, 464, 458, \
-452, 446, 439, 433, 427, 421, 415, 409, 403, 397, 391, 385, 378, 373, \
-367, 361, 355, 349, 343, 337, 331, 325, 319, 313, 307, 301, 295, 289, \
-283, 277, 272, 266, 260, 254, 248, 242, 236, 230, 224, 218, 212, 206, \
-200, 194, 188, 182, 175, 169, 163, 157, 151, 145, 138, 132, 126, 120, \
-113, 107, 100, 94, 88, 81, 75, 68, 62, 55, 48, 42, 35, 28, 21, 14, 7,
-  0};
-
-
 /* Arduino mega pwm pins:
 
   2 PE4 oc3b \
@@ -80,6 +56,9 @@ const uint16_t __ATTR_PROGMEM__ abstan[] = {0, 7, 14, 21, 28, 35, 42, 48, 55, 62
 #define CYCLES_PER_UPDATE (F_CPU/UPDATE_FREQUENCY)
 
 #define CONTROL_ACCELLERATION_PER_UPDATE (CONTROL_ACCELLERATION/UPDATE_FREQUENCY)
+
+#define COIL_MIN 512
+#define COIL_RANGE (1023-COIL_MIN)
 
 struct motion_command {
   double delta[3];  // (mm along each axis) The displacement of the tool in xyz-space during this motion
@@ -322,105 +301,38 @@ void Twister::update() {
   }
 }
 
-// Update PWM for the theta-stepper. A full cycle of microsteps runs from position 0 to 1024
-void Twister::set_nanostep_theta(uint16_t position) {
-  uint8_t sector = (position>>7 )%8;
-  uint16_t tangent = pgm_read_word_near(&abstan[position&0xff]);
-  // OCR0A = xcoil+, OCR0B = xcoil-, OCR2A = ycoil+, OCR2B = ycoil-
-  switch (sector) {
-    case 0:
-    THETA_1A = tangent; THETA_1B = 1023;
-    THETA_2A = 0; THETA_2B = 1023;
-    break;
-    case 1:
-    THETA_1A = 1023; THETA_1B = tangent;
-    THETA_2A = 0; THETA_2B = 1023;
-    break;
-    case 2:
-    THETA_1A = 1023; THETA_1B = 0;
-    THETA_2A = tangent; THETA_2B = 1023;
-    break;
-    case 3:
-    THETA_1A = 1023; THETA_1B = 0;
-    THETA_2A = 1023; THETA_2B = tangent;
-    break;
-    case 4:
-    THETA_1A = 1023; THETA_1B = tangent;
-    THETA_2A = 1023; THETA_2B = 0;
-    break;
-    case 5:
-    THETA_1A = tangent; THETA_1B = 1023;
-    THETA_2A = 1023; THETA_2B = 0;
-    break;
-    case 6:
-    THETA_1A = 0; THETA_1B = 1023;
-    THETA_2A = 1023; THETA_2B = tangent;
-    break;
-    case 7:
-    THETA_1A = 0; THETA_1B = 1023;
-    THETA_2A = tangent; THETA_2B = 1023;
-    break;
+// Daring floating point implementation
+void Twister::set_nanostep_theta(float angle) {
+  int16_t coil1 = round(sin(angle*(100/M_PI))*COIL_RANGE);
+  if (coil1>0) {
+    THETA_1A = coil1+COIL_MIN; THETA_1B = 0;
+  } else {
+    THETA_1A = 0; THETA_1B = -coil1+COIL_MIN;
+  }
+  int16_t coil2 = round(cos(angle*(100/M_PI))*COIL_RANGE);
+  if (coil2>0) {
+    THETA_2A = coil2+COIL_MIN; THETA_2B = 0;
+  } else {
+    THETA_2A = 0; THETA_2B = -coil2+COIL_MIN;
   }
 }
+
 
 // Daring floating point implementation
 void Twister::set_nanostep_lambda(float angle) {
-  int16_t cmin = 513;
-  int16_t crange = 1023-cmin;
-  int16_t coil1 = round(sin(angle*(100/M_PI))*crange);
+  int16_t coil1 = round(sin(angle*(100/M_PI))*COIL_RANGE);
   if (coil1>0) {
-    LAMBDA_1A = coil1+cmin; LAMBDA_1B = 0;
+    LAMBDA_1A = coil1+COIL_MIN; LAMBDA_1B = 0;
   } else {
-    LAMBDA_1A = 0; LAMBDA_1B = -coil1+cmin;
+    LAMBDA_1A = 0; LAMBDA_1B = -coil1+COIL_MIN;
   }
-  int16_t coil2 = round(cos(angle*(100/M_PI))*crange);
+  int16_t coil2 = round(cos(angle*(100/M_PI))*COIL_RANGE);
   if (coil2>0) {
-    LAMBDA_2A = coil2+cmin; LAMBDA_2B = 0;
+    LAMBDA_2A = coil2+COIL_MIN; LAMBDA_2B = 0;
   } else {
-    LAMBDA_2A = 0; LAMBDA_2B = -coil2+cmin;
+    LAMBDA_2A = 0; LAMBDA_2B = -coil2+COIL_MIN;
   }
 }
-
-// Update PWM for the lambda-stepper. A full cycle of microsteps runs from position 0 to 1024
-/*void Twister::set_nanostep_lambda(uint16_t position) {
-  uint8_t sector = (position>>7 )%8;
-  uint16_t tangent = pgm_read_word_near(&abstan[position&0xff]);
-  // OCR0A = xcoil+, OCR0B = xcoil-, OCR2A = ycoil+, OCR2B = ycoil-
-  switch (sector) {
-    case 0:
-    LAMBDA_1A = tangent; LAMBDA_1B = 1023;
-    LAMBDA_2A = 0; LAMBDA_2B = 1023;
-    break;
-    case 1:
-    LAMBDA_1A = 1023; LAMBDA_1B = tangent;
-    LAMBDA_2A = 0; LAMBDA_2B = 1023;
-    break;
-    case 2:
-    LAMBDA_1A = 1023; LAMBDA_1B = 0;
-    LAMBDA_2A = tangent; LAMBDA_2B = 1023;
-    break;
-    case 3:
-    LAMBDA_1A = 1023; LAMBDA_1B = 0;
-    LAMBDA_2A = 1023; LAMBDA_2B = tangent;
-    break;
-    case 4:
-    LAMBDA_1A = 1023; LAMBDA_1B = tangent;
-    LAMBDA_2A = 1023; LAMBDA_2B = 0;
-    break;
-    case 5:
-    LAMBDA_1A = tangent; LAMBDA_1B = 1023;
-    LAMBDA_2A = 1023; LAMBDA_2B = 0;
-    break;
-    case 6:
-    LAMBDA_1A = 0; LAMBDA_1B = 1023;
-    LAMBDA_2A = 1023; LAMBDA_2B = tangent;
-    break;
-    case 7:
-    LAMBDA_1A = 0; LAMBDA_1B = 1023;
-    LAMBDA_2A = tangent; LAMBDA_2B = 1023;
-    break;
-  }
-}*/
 
 // Block execution until the motion buffer is empty
 void Twister::synchronize() {

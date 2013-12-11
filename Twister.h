@@ -37,7 +37,7 @@ private:
 
   //static void set_nanostep_lambda(uint16_t position);
   static void set_nanostep_lambda(float angle);
-  static void set_nanostep_theta(uint16_t position);
+  static void set_nanostep_theta(float angle);
   static void maintain_speed(double target_speed);
   static double estimate_jerk_magnitude(struct motion_command *command1, struct motion_command *command2);
   static double estimate_acceleration_distance(double speed, double target_speed);
