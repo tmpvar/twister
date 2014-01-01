@@ -27,9 +27,9 @@
 #                is connected.
 # FUSES ........ Parameters for avrdude to flash the fuses appropriately.
 
-DEVICE     = atmega1280 
+DEVICE     = atmega328p 
 CLOCK      = 16000000
-PROGRAMMER = -c avrisp2 -P usb
+PROGRAMMER = -c arduino -P /dev/tty.usbmodemfd121
 OBJECTS    = main.o MotionControl.o GCodeParser.o serial_protocol.o \
              libraries/HardwareSerial.o libraries/Print.o libraries/SimplePacket.o \
              libraries/extruder.o Twister.o
